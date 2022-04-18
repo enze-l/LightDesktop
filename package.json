@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "asciichart": "^1.5.25",
+    "axios": "^0.26.1",
+    "shelljs": "^0.8.5"
+  }
+}
