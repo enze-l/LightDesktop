@@ -4,7 +4,7 @@ const bodyParser = require('body-parser')
 const app = express()
 app.use(bodyParser.text({type:"*/*"}))
 
-const port = process.env.PORT || 8081
+const port = 8081
 let sensor_min = 100
 let sensor_max = 500
 let display_min = .5
@@ -46,6 +46,6 @@ app.post('/sensor/max', (req, res) => {
     sensor_max = req.body
 })
 
-app.listen(port, () => console.log(`Listening on port ${port}..`))
+app.listen(port, '127.0.0.1', () => console.log(`Listening on port ${port}..`))
 
 
