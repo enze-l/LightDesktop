@@ -4,10 +4,8 @@ const axios = require('axios')
 
 const serverAdress = "http://192.168.2.64:50000"
 
-shell.exec("echo 'test'")
-
 function getHundretValues(){
-    return axios.get(serverAdress + "/list/100")
+    return axios.get(serverAdress + "/list/day")
 }
 
 function getMinValue(){
@@ -18,14 +16,28 @@ function getMaxValue(){
     return axios.get(serverAdress + "/reading/max")
 }
 
-Promise.all([getHundretValues(), getMinValue(), getMaxValue()])
+function getCurrentValue(){
+    return axios.get(serverAdress + "/reading")
+}
+
+Promise.all([getHundretValues(), getMinValue(), getMaxValue(), getCurrentValue()])
     .then(function(results) {
         const hundretValues = results[0].data
         const minValue = results[1].data
         const maxValue = results[2].data
+        const currentValue = results[3].data
 
-        const hundretArray = String(hundretValues).split(/(\s+)/).filter( e => e.trim().length > 0)
-        const baseLine = new Array(hundretArray.length).fill(String(minValue))
-        const topLine = new Array(hundretArray.length).fill(String(maxValue))
-        console.log(asciichart.plot([baseLine, hundretArray, topLine], {height: 10}))
+        const readingLine = String(hundretValues).split(/(\s+)/).filter( e => e.trim().length > 0)
+        const baseLine = new Array(readingLine.length).fill(String(minValue))
+        const topLine = new Array(readingLine.length).fill(String(maxValue))
+        const currentLine = new Array(readingLine.length).fill(String(currentValue))
+
+        config = {
+            colors: [ asciichart.blue, asciichart.default, asciichart.yellow, asciichart.green ],
+            height: 20
+        }
+
+        shell.exec("xrandr --output DP-0 --brightness 1")
+
+        console.log(asciichart.plot([baseLine, readingLine, topLine, currentLine], config))
     })
