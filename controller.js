@@ -8,8 +8,6 @@ app.use(bodyParser.text({type:"*/*"}))
 const serverAddress = "http://192.168.2.64:50000"
 
 const port = 8081
-let sensor_min = 100
-let sensor_max = 500
 let display_brightness = 1
 let display_min = .5
 let display_max = 1
@@ -29,6 +27,16 @@ function sendSuccess(res){
 
 async function getHundredValues(){
     const response = await axios.get(serverAddress + "/list/100")
+    return response.data
+}
+
+async function getMaxValue(){
+    const response = await axios.get(serverAddress + "/reading/max")
+    return response.data
+}
+
+async function getCurrentValue() {
+    const response = await axios.get(serverAddress + "/reading")
     return response.data
 }
 
@@ -60,15 +68,16 @@ app.post('/display/max', (req, res) => {
     sendSuccess(res)
 })
 
-app.post('/sensor/min', (req, res) => {
-    sensor_min = req.body
-    console.log("/sensor/min accessed")
-    sendSuccess(res)
+app.get('/sensor/max', async (req, res) => {
+    const max_value = String(await getMaxValue())
+    console.log("get /sensor/max value: " + max_value)
+    res.send(max_value)
 })
 
-app.post('/sensor/max', (req, res) => {
-    console.log("/sensor/max accessed")
-    sensor_max = req.body
+app.get('/sensor', async (req, res) =>{
+    const current_value = String(await getCurrentValue())
+    console.log("get /sensor value: " + current_value)
+    res.send(current_value)
 })
 
 app.listen(port, '127.0.0.1', () => console.log(`Listening on port ${port}..`))
