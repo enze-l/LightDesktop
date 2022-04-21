@@ -28,13 +28,13 @@ function sendSuccess(res){
 app.get('/sensor/day', async (req, res) => {
     const response = await axios.get(serverAddress + "/list/day")
     res.send(response.data);
-    console.log("/sensor/day accessed")
+    console.log("get /sensor/day value: " + response.data)
 })
 
 app.get('/sensor/100', async (req, res) => {
     const response = await axios.get(serverAddress + "/list/100")
-    res.send(response);
-    console.log("/sensor/100 accessed")
+    res.send(response.data);
+    console.log("get /sensor/100 value: " + response.data)
 })
 
 app.post('/display/brightness',(req, res) =>{
@@ -50,13 +50,13 @@ app.get('/display/brightness',(req, res) =>{
 
 app.post('/display/min',(req, res) =>{
     display_min = req.body
-    console.log("/display/min accessed")
+    console.log("post /display/min value: " + req.body)
     sendSuccess(res)
 })
 
 app.post('/display/max', (req, res) => {
     display_max = req.body
-    console.log("/display/max accessed")
+    console.log("post /display/max accessed value: " + req.body)
     sendSuccess(res)
 })
 
