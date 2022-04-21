@@ -25,23 +25,15 @@ function sendSuccess(res){
     res.sendStatus(204)
 }
 
-async function getHundredValues(){
-    const response = await axios.get(serverAddress + "/list/100")
-    return response.data
-}
-
-async function getMaxValue(){
-    const response = await axios.get(serverAddress + "/reading/max")
-    return response.data
-}
-
-async function getCurrentValue() {
-    const response = await axios.get(serverAddress + "/reading")
-    return response.data
-}
+app.get('/sensor/day', async (req, res) => {
+    const response = await axios.get(serverAddress + "/list/day")
+    res.send(response.data);
+    console.log("/sensor/day accessed")
+})
 
 app.get('/sensor/100', async (req, res) => {
-    res.send(await getHundredValues());
+    const response = await axios.get(serverAddress + "/list/100")
+    res.send(response);
     console.log("/sensor/100 accessed")
 })
 
@@ -69,13 +61,15 @@ app.post('/display/max', (req, res) => {
 })
 
 app.get('/sensor/max', async (req, res) => {
-    const max_value = String(await getMaxValue())
+    const response = await axios.get(serverAddress + "/reading/max")
+    const max_value = String(response.data)
     console.log("get /sensor/max value: " + max_value)
     res.send(max_value)
 })
 
 app.get('/sensor', async (req, res) =>{
-    const current_value = String(await getCurrentValue())
+    const response = await axios.get(serverAddress + "/reading")
+    const current_value = String(response.data)
     console.log("get /sensor value: " + current_value)
     res.send(current_value)
 })
