@@ -21,10 +21,6 @@ function setBrightness(brightness){
     shell.exec("xrandr --output " + displayName + " --brightness " + brightness)
 }
 
-function sendSuccess(res){
-    res.sendStatus(204)
-}
-
 function getAndLog(req, res, body){
     res.send(String(body))
     console.log("get " + req.path + " value: " + body)
@@ -81,5 +77,3 @@ app.get('/sensor/100', async (req, res) => {
 })
 
 app.listen(port, '127.0.0.1', () => console.log(`Listening on port ${port}..`))
-
-
