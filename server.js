@@ -25,6 +25,11 @@ function sendSuccess(res){
     res.sendStatus(204)
 }
 
+function getAndLog(req, res, body){
+    res.send(String(body))
+    console.log("get " + req.path + " value: " + body)
+}
+
 //display brightness
 app.post('/display/brightness',(req, res) =>{
     setBrightness(req.body)
@@ -32,8 +37,7 @@ app.post('/display/brightness',(req, res) =>{
     console.log("post /display/brightness value: " + req.body)
 })
 app.get('/display/brightness',(req, res) =>{
-    res.send(String(display_brightness));
-    console.log("get /display/brightness value: " + display_brightness)
+    getAndLog(req, res, display_brightness)
 })
 
 //display min
@@ -43,8 +47,7 @@ app.post('/display/min',(req, res) =>{
     console.log("post /display/min value: " + req.body)
 })
 app.get('/display/min',(req, res) =>{
-    res.send(String(display_min));
-    console.log("get /display/brightness value: " + display_min)
+    getAndLog(req, res, display_min)
 })
 
 //display max
@@ -54,32 +57,25 @@ app.post('/display/max', (req, res) => {
     sendSuccess(res)
 })
 app.get('/display/max',(req, res) =>{
-    res.send(String(display_max));
-    console.log("get /display/brightness value: " + display_max)
+    getAndLog(req, res, display_max)
 })
 
 //sensor values
 app.get('/sensor/max', async (req, res) => {
     const response = await axios.get(serverAddress + "/reading/max")
-    const max_value = String(response.data)
-    console.log("get /sensor/max value: " + max_value)
-    res.send(max_value)
+    getAndLog(req, res, response.data)
 })
 app.get('/sensor', async (req, res) =>{
     const response = await axios.get(serverAddress + "/reading")
-    const current_value = String(response.data)
-    console.log("get /sensor value: " + current_value)
-    res.send(current_value)
+    getAndLog(req, res, response.data)
 })
 app.get('/sensor/day', async (req, res) => {
     const response = await axios.get(serverAddress + "/list/day")
-    res.send(response.data);
-    console.log("get /sensor/day value: " + response.data)
+    getAndLog(req, res, response.data)
 })
 app.get('/sensor/100', async (req, res) => {
     const response = await axios.get(serverAddress + "/list/100")
-    res.send(response.data);
-    console.log("get /sensor/100 value: " + response.data)
+    getAndLog(req, res, response.data)
 })
 
 app.listen(port, '127.0.0.1', () => console.log(`Listening on port ${port}..`))
