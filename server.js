@@ -30,11 +30,15 @@ function getAndLog(req, res, body){
     console.log("get " + req.path + " value: " + body)
 }
 
+function postAndLog(req, res){
+    res.sendStatus(204);
+    console.log("post " + req.path + " value: " + req.body)
+}
+
 //display brightness
 app.post('/display/brightness',(req, res) =>{
     setBrightness(req.body)
-    sendSuccess(res)
-    console.log("post /display/brightness value: " + req.body)
+    postAndLog(req, res)
 })
 app.get('/display/brightness',(req, res) =>{
     getAndLog(req, res, display_brightness)
@@ -43,8 +47,7 @@ app.get('/display/brightness',(req, res) =>{
 //display min
 app.post('/display/min',(req, res) =>{
     display_min = req.body
-    sendSuccess(res)
-    console.log("post /display/min value: " + req.body)
+    postAndLog(req, res)
 })
 app.get('/display/min',(req, res) =>{
     getAndLog(req, res, display_min)
@@ -53,8 +56,7 @@ app.get('/display/min',(req, res) =>{
 //display max
 app.post('/display/max', (req, res) => {
     display_max = req.body
-    console.log("post /display/max accessed value: " + req.body)
-    sendSuccess(res)
+    postAndLog(req, res)
 })
 app.get('/display/max',(req, res) =>{
     getAndLog(req, res, display_max)
