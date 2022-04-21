@@ -11,6 +11,8 @@ const port = 8081
 let display_brightness = 1
 let display_min = .5
 let display_max = 1
+let display_threshold_min = 50
+let display_threshold_max = 300
 
 function setBrightness(brightness){
     display_brightness = brightness
@@ -31,6 +33,7 @@ function postAndLog(req, res){
     console.log("post " + req.path + " value: " + req.body)
 }
 
+//display
 //display brightness
 app.post('/display/brightness',(req, res) =>{
     setBrightness(req.body)
@@ -39,7 +42,6 @@ app.post('/display/brightness',(req, res) =>{
 app.get('/display/brightness',(req, res) =>{
     getAndLog(req, res, display_brightness)
 })
-
 //display min
 app.post('/display/min',(req, res) =>{
     display_min = req.body
@@ -48,7 +50,6 @@ app.post('/display/min',(req, res) =>{
 app.get('/display/min',(req, res) =>{
     getAndLog(req, res, display_min)
 })
-
 //display max
 app.post('/display/max', (req, res) => {
     display_max = req.body
@@ -57,14 +58,31 @@ app.post('/display/max', (req, res) => {
 app.get('/display/max',(req, res) =>{
     getAndLog(req, res, display_max)
 })
-
-//sensor values
-app.get('/sensor/max', async (req, res) => {
-    const response = await axios.get(serverAddress + "/reading/max")
-    getAndLog(req, res, response.data)
+//display threshold min
+app.post('/display/threshold/min',(req, res) =>{
+    display_threshold_min = req.body
+    postAndLog(req, res)
 })
+app.get('/display/threshold/min',(req, res) =>{
+    getAndLog(req, res, display_threshold_min)
+})
+
+//display threshold max
+app.post('/display/threshold/max', (req, res) => {
+    display_threshold_max = req.body
+    postAndLog(req, res)
+})
+app.get('/display/threshold/max',(req, res) =>{
+    getAndLog(req, res, display_threshold_max)
+})
+
+//sensor
 app.get('/sensor', async (req, res) =>{
     const response = await axios.get(serverAddress + "/reading")
+    getAndLog(req, res, response.data)
+})
+app.get('/sensor/max', async (req, res) => {
+    const response = await axios.get(serverAddress + "/reading/max")
     getAndLog(req, res, response.data)
 })
 app.get('/sensor/day', async (req, res) => {
