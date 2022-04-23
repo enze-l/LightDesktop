@@ -81,6 +81,9 @@ app.get('/sensor', async (req, res) =>{
     const response = await axios.get(serverAddress + "/reading")
     getAndLog(req, res, response.data)
 })
+app.post('/sensor', async (req, res)=>{
+    console.log("IMPORTANT" + req.body)
+})
 app.get('/sensor/max', async (req, res) => {
     const response = await axios.get(serverAddress + "/reading/max")
     getAndLog(req, res, response.data)
@@ -94,4 +97,4 @@ app.get('/sensor/100', async (req, res) => {
     getAndLog(req, res, response.data)
 })
 
-app.listen(port, '127.0.0.1', () => console.log(`Listening on port ${port}..`))
+app.listen(port, '0.0.0.0', () => console.log(`Listening on port ${port}..`))
