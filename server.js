@@ -2,7 +2,6 @@ const express = require('express')
 const shell = require("shelljs");
 const bodyParser = require('body-parser')
 const axios = require("axios");
-const {log} = require("shelljs/src/common");
 const app = express()
 app.use(bodyParser.text({type:"*/*"}))
 
@@ -15,20 +14,42 @@ let display_max = 1
 let display_threshold_min = 50
 let display_threshold_max = 300
 let lighting_history = []
+// has to be lower/equal 100
+let avgArrayLength = 60
 
 function setBrightness(brightness){
-    display_brightness = brightness
-    const displayInfoArray = String(
-        shell.exec("xrandr --prop", { silent: true })).split(/(\s+)/).filter( e => e.trim().length > 0
-    )
-    const displayName = displayInfoArray[displayInfoArray.indexOf("connected") - 1]
-    shell.exec("xrandr --output " + displayName + " --brightness " + brightness)
+    if (display_brightness !== brightness) {
+        display_brightness = brightness
+        const displayInfoArray = String(
+            shell.exec("xrandr --prop", {silent: true})).split(/(\s+)/).filter(e => e.trim().length > 0
+        )
+        const displayName = displayInfoArray[displayInfoArray.indexOf("connected") - 1]
+        shell.exec("xrandr --output " + displayName + " --brightness " + brightness)
+    }
 }
 
 function setAutoBrightness(){
     const average = arr => arr.reduce((a,b) => a + b, 0) / arr.length
     const lightAverage = average(lighting_history).toFixed(0)
     console.log(lightAverage)
+    console.log(display_threshold_max)
+    console.log(display_threshold_min)
+    if(lightAverage < display_threshold_min){
+        setBrightness(display_min)
+        console.log("Low Value")
+    }
+    else if(lightAverage > display_threshold_max){
+        setBrightness(display_max)
+        console.log("Hig Value")
+    } else {
+        const displayRange = display_max - display_min
+        const displayThresholdRange = display_threshold_max - display_threshold_min
+        const rangeAdjustedAverage = lightAverage - display_threshold_min;
+
+        const brightness = display_min + ( rangeAdjustedAverage / displayThresholdRange ) * displayRange
+        setBrightness(brightness)
+        console.log("Regulating")
+    }
 }
 
 function getRespondAndLog(req, res, body){
@@ -52,7 +73,7 @@ app.get('/display/brightness',(req, res) =>{
 })
 //display min
 app.post('/display/min',(req, res) =>{
-    display_min = req.body
+    display_min = parseFloat(req.body)
     postRespondAndLog(req, res)
 })
 app.get('/display/min',(req, res) =>{
@@ -60,7 +81,7 @@ app.get('/display/min',(req, res) =>{
 })
 //display max
 app.post('/display/max', (req, res) => {
-    display_max = req.body
+    display_max = parseFloat(req.body)
     postRespondAndLog(req, res)
 })
 app.get('/display/max',(req, res) =>{
@@ -68,7 +89,7 @@ app.get('/display/max',(req, res) =>{
 })
 //display threshold min
 app.post('/display/threshold/min',(req, res) =>{
-    display_threshold_min = req.body
+    display_threshold_min = parseInt(req.body)
     postRespondAndLog(req, res)
 })
 app.get('/display/threshold/min',(req, res) =>{
@@ -77,7 +98,7 @@ app.get('/display/threshold/min',(req, res) =>{
 
 //display threshold max
 app.post('/display/threshold/max', (req, res) => {
-    display_threshold_max = req.body
+    display_threshold_max = parseInt(req.body)
     postRespondAndLog(req, res)
 })
 app.get('/display/threshold/max',(req, res) =>{
@@ -94,7 +115,7 @@ app.post('/sensor', async (req, res)=>{
     postRespondAndLog(req, res)
     const number = parseInt(req.body.replace( /^\D+/g, ''))
     lighting_history.push(number)
-    if(lighting_history.length > 20) {
+    if(lighting_history.length > avgArrayLength) {
         lighting_history.shift()
     }
     setAutoBrightness()
@@ -112,7 +133,7 @@ app.get('/sensor/100', async (req, res) => {
     const lighting_history_100 = response.data.split(/(\s+)/).filter(e => e.trim().length > 0).map(function(item) {
         return parseInt(item, 10);
     });
-    lighting_history = lighting_history_100.slice(80)
+    lighting_history = lighting_history_100.slice(100-avgArrayLength)
     getRespondAndLog(req, res, response.data)
 })
 
