@@ -14,8 +14,7 @@ let display_max = 1
 let display_threshold_min = 50
 let display_threshold_max = 300
 let lighting_history = []
-// has to be lower/equal 100
-let avgArrayLength = 60
+let avgArrayLength = 50
 
 function setBrightness(brightness){
     if (display_brightness !== brightness) {
@@ -30,10 +29,8 @@ function setBrightness(brightness){
 
 function setAutoBrightness(){
     const average = arr => arr.reduce((a,b) => a + b, 0) / arr.length
-    const lightAverage = average(lighting_history).toFixed(0)
-    console.log(lightAverage)
-    console.log(display_threshold_max)
-    console.log(display_threshold_min)
+    const lighting_history_clone = [...lighting_history]
+    const lightAverage = average(lighting_history_clone.splice(100-avgArrayLength)).toFixed(0)
     if(lightAverage < display_threshold_min){
         setBrightness(display_min)
         console.log("Low Value")
@@ -50,6 +47,14 @@ function setAutoBrightness(){
         setBrightness(brightness)
         console.log("Regulating")
     }
+}
+
+async function getLightingHistory(){
+    const response = await axios.get(serverAddress + "/list/100")
+    lighting_history = response.data.split(/(\s+)/).filter(e => e.trim().length > 0).map(function(item) {
+        return parseInt(item, 10);
+    });
+    return response
 }
 
 function getRespondAndLog(req, res, body){
@@ -87,6 +92,14 @@ app.post('/display/max', (req, res) => {
 app.get('/display/max',(req, res) =>{
     getRespondAndLog(req, res, display_max)
 })
+//display max
+app.post('/display/intervalLength', (req, res) => {
+    avgArrayLength = parseFloat(req.body)
+    postRespondAndLog(req, res)
+})
+app.get('/display/intervalLength',(req, res) =>{
+    getRespondAndLog(req, res, avgArrayLength)
+})
 //display threshold min
 app.post('/display/threshold/min',(req, res) =>{
     display_threshold_min = parseInt(req.body)
@@ -115,7 +128,7 @@ app.post('/sensor', async (req, res)=>{
     postRespondAndLog(req, res)
     const number = parseInt(req.body.replace( /^\D+/g, ''))
     lighting_history.push(number)
-    if(lighting_history.length > avgArrayLength) {
+    if(lighting_history.length > 100) {
         lighting_history.shift()
     }
     setAutoBrightness()
@@ -129,12 +142,9 @@ app.get('/sensor/day', async (req, res) => {
     getRespondAndLog(req, res, response.data)
 })
 app.get('/sensor/100', async (req, res) => {
-    const response = await axios.get(serverAddress + "/list/100")
-    const lighting_history_100 = response.data.split(/(\s+)/).filter(e => e.trim().length > 0).map(function(item) {
-        return parseInt(item, 10);
-    });
-    lighting_history = lighting_history_100.slice(100-avgArrayLength)
+    const response = await getLightingHistory()
     getRespondAndLog(req, res, response.data)
 })
 
+getLightingHistory().then()
 app.listen(port, '0.0.0.0', () => console.log(`Listening on port ${port}..`))
