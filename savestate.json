@@ -1,0 +1,9 @@
+{
+  "port": 8081,
+  "display_brightness": 1,
+  "display_min": 0.74,
+  "display_max": 1,
+  "display_threshold_min": 34,
+  "display_threshold_max": 50,
+  "avgArrayLength": 10
+}

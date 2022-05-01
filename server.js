@@ -2,23 +2,39 @@ const express = require('express')
 const shell = require("shelljs");
 const bodyParser = require('body-parser')
 const axios = require("axios");
+const fs = require("fs");
 const app = express()
 app.use(bodyParser.text({type:"*/*"}))
 
 const serverAddress = "http://192.168.2.64:50000"
 
-const port = 8081
-let display_brightness = 1
-let display_min = .5
-let display_max = 1
-let display_threshold_min = 50
-let display_threshold_max = 300
+let settings =
+{
+    port: 8081,
+    display_brightness: 1,
+    display_min: .5,
+    display_max: 1,
+    display_threshold_min: 50,
+    display_threshold_max: 300,
+    avgArrayLength: 50
+}
 let lighting_history = []
-let avgArrayLength = 50
+
+
+function loadSettings(){
+    let rawdata = fs.readFileSync('./savestate.json')
+    settings = JSON.parse(rawdata)
+    console.log(settings)
+}
+
+function saveSettings(){
+    let data = JSON.stringify(settings, null, 2)
+    fs.writeFileSync('./savestate.json', data)
+}
 
 function setBrightness(brightness){
-    if (display_brightness !== brightness) {
-        display_brightness = brightness
+    if (settings.display_brightness !== brightness) {
+        settings.display_brightness = brightness
         const displayInfoArray = String(
             shell.exec("xrandr --prop", {silent: true})).split(/(\s+)/).filter(e => e.trim().length > 0
         )
@@ -30,20 +46,20 @@ function setBrightness(brightness){
 function setAutoBrightness(){
     const average = arr => arr.reduce((a,b) => a + b, 0) / arr.length
     const lighting_history_clone = [...lighting_history]
-    const lightAverage = average(lighting_history_clone.splice(100-avgArrayLength)).toFixed(0)
-    if(lightAverage < display_threshold_min){
-        setBrightness(display_min)
+    const lightAverage = average(lighting_history_clone.splice(100-settings.avgArrayLength)).toFixed(0)
+    if(lightAverage < settings.display_threshold_min){
+        setBrightness(settings.display_min)
         console.log("Low Value")
     }
-    else if(lightAverage > display_threshold_max){
-        setBrightness(display_max)
+    else if(lightAverage > settings.display_threshold_max){
+        setBrightness(settings.display_max)
         console.log("Hig Value")
     } else {
-        const displayRange = display_max - display_min
-        const displayThresholdRange = display_threshold_max - display_threshold_min
-        const rangeAdjustedAverage = lightAverage - display_threshold_min;
+        const displayRange = settings.display_max - settings.display_min
+        const displayThresholdRange = settings.display_threshold_max - settings.display_threshold_min
+        const rangeAdjustedAverage = lightAverage - settings.display_threshold_min;
 
-        const brightness = display_min + ( rangeAdjustedAverage / displayThresholdRange ) * displayRange
+        const brightness = settings.display_min + ( rangeAdjustedAverage / displayThresholdRange ) * displayRange
         setBrightness(brightness)
         console.log("Regulating")
     }
@@ -59,11 +75,13 @@ async function getLightingHistory(){
 
 function getRespondAndLog(req, res, body){
     res.send(String(body))
+    saveSettings()
     console.log("get " + req.path + " value: " + body)
 }
 
 function postRespondAndLog(req, res){
-    res.sendStatus(204);
+    res.sendStatus(204)
+    saveSettings()
     console.log("post " + req.path + " value: " + req.body)
 }
 
@@ -74,48 +92,48 @@ app.post('/display/brightness',(req, res) =>{
     postRespondAndLog(req, res)
 })
 app.get('/display/brightness',(req, res) =>{
-    getRespondAndLog(req, res, display_brightness)
+    getRespondAndLog(req, res, settings.display_brightness)
 })
 //display min
 app.post('/display/min',(req, res) =>{
-    display_min = parseFloat(req.body)
+    settings.display_min = parseFloat(req.body)
     postRespondAndLog(req, res)
 })
 app.get('/display/min',(req, res) =>{
-    getRespondAndLog(req, res, display_min)
+    getRespondAndLog(req, res, settings.display_min)
 })
 //display max
 app.post('/display/max', (req, res) => {
-    display_max = parseFloat(req.body)
+    settings.display_max = parseFloat(req.body)
     postRespondAndLog(req, res)
 })
 app.get('/display/max',(req, res) =>{
-    getRespondAndLog(req, res, display_max)
+    getRespondAndLog(req, res, settings.display_max)
 })
 //display max
 app.post('/display/intervalLength', (req, res) => {
-    avgArrayLength = parseFloat(req.body)
+    settings.avgArrayLength = parseFloat(req.body)
     postRespondAndLog(req, res)
 })
 app.get('/display/intervalLength',(req, res) =>{
-    getRespondAndLog(req, res, avgArrayLength)
+    getRespondAndLog(req, res, settings.avgArrayLength)
 })
 //display threshold min
 app.post('/display/threshold/min',(req, res) =>{
-    display_threshold_min = parseInt(req.body)
+    settings.display_threshold_min = parseInt(req.body)
     postRespondAndLog(req, res)
 })
 app.get('/display/threshold/min',(req, res) =>{
-    getRespondAndLog(req, res, display_threshold_min)
+    getRespondAndLog(req, res, settings.display_threshold_min)
 })
 
 //display threshold max
 app.post('/display/threshold/max', (req, res) => {
-    display_threshold_max = parseInt(req.body)
+    settings.display_threshold_max = parseInt(req.body)
     postRespondAndLog(req, res)
 })
 app.get('/display/threshold/max',(req, res) =>{
-    getRespondAndLog(req, res, display_threshold_max)
+    getRespondAndLog(req, res, settings.display_threshold_max)
 })
 
 //sensor
@@ -125,12 +143,12 @@ app.get('/sensor', async (req, res) =>{
 })
 
 app.post('/sensor', async (req, res)=>{
-    postRespondAndLog(req, res)
     const number = parseInt(req.body.replace( /^\D+/g, ''))
     lighting_history.push(number)
     if(lighting_history.length > 100) {
         lighting_history.shift()
     }
+    postRespondAndLog(req, res)
     setAutoBrightness()
 })
 app.get('/sensor/max', async (req, res) => {
@@ -146,5 +164,6 @@ app.get('/sensor/100', async (req, res) => {
     getRespondAndLog(req, res, response.data)
 })
 
+loadSettings()
 getLightingHistory().then()
-app.listen(port, '0.0.0.0', () => console.log(`Listening on port ${port}..`))
+app.listen(settings.port, '0.0.0.0', () => console.log(`Listening on port ${settings.port}..`))
