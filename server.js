@@ -1,16 +1,18 @@
 const express = require('express')
-const shell = require("shelljs");
+const shell = require("shelljs")
 const bodyParser = require('body-parser')
-const axios = require("axios");
-const fs = require("fs");
+const axios = require("axios")
+const fs = require("fs")
+const ip = require('ip')
 const app = express()
 app.use(bodyParser.text({type:"*/*"}))
 
 const serverAddress = "http://192.168.2.64:50000"
+const ownAddress = ip.address()
+const port = 8081
 
 let settings =
 {
-    port: 8081,
     display_brightness: 1,
     display_min: .5,
     display_max: 1,
@@ -30,6 +32,10 @@ function loadSettings(){
 function saveSettings(){
     let data = JSON.stringify(settings, null, 2)
     fs.writeFileSync('./savestate.json', data)
+}
+
+function subscribeToSensor(){
+    axios.post(serverAddress + '/subscriber/' + ownAddress + ":" + port).then()
 }
 
 function setBrightness(brightness){
@@ -165,5 +171,6 @@ app.get('/sensor/100', async (req, res) => {
 })
 
 loadSettings()
+subscribeToSensor()
 getLightingHistory().then()
-app.listen(settings.port, '0.0.0.0', () => console.log(`Listening on port ${settings.port}..`))
+app.listen(port, '0.0.0.0', () => console.log(`Listening on port ${port}..`))
