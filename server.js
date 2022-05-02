@@ -13,13 +13,13 @@ const port = 8081
 
 let settings =
 {
-    display_brightness: 1,
     display_min: .5,
     display_max: 1,
     display_threshold_min: 50,
     display_threshold_max: 300,
     avgArrayLength: 50
 }
+let display_brightness = 1
 let lighting_history = []
 
 
@@ -39,8 +39,8 @@ function subscribeToSensor(){
 }
 
 function setBrightness(brightness){
-    if (settings.display_brightness !== brightness) {
-        settings.display_brightness = brightness
+    if (display_brightness !== brightness) {
+        display_brightness = brightness
         const displayInfoArray = String(
             shell.exec("xrandr --prop", {silent: true})).split(/(\s+)/).filter(e => e.trim().length > 0
         )
@@ -98,7 +98,7 @@ app.post('/display/brightness',(req, res) =>{
     postRespondAndLog(req, res)
 })
 app.get('/display/brightness',(req, res) =>{
-    getRespondAndLog(req, res, settings.display_brightness)
+    getRespondAndLog(req, res, display_brightness)
 })
 //display min
 app.post('/display/min',(req, res) =>{
