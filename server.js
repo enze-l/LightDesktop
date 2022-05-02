@@ -5,15 +5,12 @@ const bodyParser = require('body-parser')
 const axios = require('axios')
 const fs = require('fs')
 const ip = require('ip')
+const socketIo = require('socket.io')
 
 const app = express()
 app.use(bodyParser.text({type:"*/*"}))
 const server = http.createServer(app)
-const io = require('socket.io')(server)
-
-io.on('connection', () =>{
-    console.log("hello")
-})
+const io = socketIo(server)
 
 const serverAddress = "http://192.168.2.64:50000"
 const ownAddress = ip.address()
@@ -30,10 +27,16 @@ let settings =
 let display_brightness = 1
 let lighting_history = []
 
+io.on("connection", (socket) =>{
+    console.log("client connected")
+    socket.on("disconnect", () =>{
+        console.log("client disconnected")
+    })
+})
 
 function loadSettings(){
-    let rawdata = fs.readFileSync('./savestate.json')
-    settings = JSON.parse(rawdata)
+    let rawData = fs.readFileSync('./savestate.json')
+    settings = JSON.parse(rawData)
     console.log(settings)
 }
 
@@ -164,6 +167,7 @@ app.post('/sensor', async (req, res)=>{
     }
     postRespondAndLog(req, res)
     setAutoBrightness()
+    io.emit("reading")
 })
 app.get('/sensor/max', async (req, res) => {
     const response = await axios.get(serverAddress + "/reading/max")
