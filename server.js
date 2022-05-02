@@ -62,7 +62,11 @@ function setBrightness(brightness){
 
 function setAutoBrightness(){
     const average = arr => arr.reduce((a,b) => a + b, 0) / arr.length
-    const lighting_history_clone = [...lighting_history]
+    let lighting_history_clone = [...lighting_history]
+    if(lighting_history_clone.length<100){
+        const frontFiller = Array(100-lighting_history_clone.length).fill(lighting_history_clone[0])
+        lighting_history_clone = frontFiller.concat(lighting_history_clone)
+    }
     const lightAverage = average(lighting_history_clone.splice(100-settings.avgArrayLength)).toFixed(0)
     if(lightAverage < settings.display_threshold_min){
         setBrightness(settings.display_min)
@@ -137,7 +141,12 @@ app.get('/display/intervalLength',(req, res) =>{
 })
 //display threshold min
 app.post('/display/threshold/min',(req, res) =>{
-    settings.display_threshold_min = parseInt(req.body)
+    const value = parseInt(req.body)
+    if (value) {
+        settings.display_threshold_min = value
+    } else {
+        settings.display_threshold_min = 0
+    }
     postRespondAndLog(req, res)
 })
 app.get('/display/threshold/min',(req, res) =>{
@@ -162,7 +171,7 @@ app.get('/sensor', async (req, res) =>{
 app.post('/sensor', async (req, res)=>{
     const number = parseInt(req.body.replace( /^\D+/g, ''))
     lighting_history.push(number)
-    if(lighting_history.length > 100) {
+    while(lighting_history.length > 100) {
         lighting_history.shift()
     }
     postRespondAndLog(req, res)
