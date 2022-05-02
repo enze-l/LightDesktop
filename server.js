@@ -167,7 +167,7 @@ app.post('/sensor', async (req, res)=>{
     }
     postRespondAndLog(req, res)
     setAutoBrightness()
-    io.emit("reading")
+    io.emit("reading", number)
 })
 app.get('/sensor/max', async (req, res) => {
     const response = await axios.get(serverAddress + "/reading/max")
@@ -178,8 +178,7 @@ app.get('/sensor/day', async (req, res) => {
     getRespondAndLog(req, res, response.data)
 })
 app.get('/sensor/100', async (req, res) => {
-    const response = await getLightingHistory()
-    getRespondAndLog(req, res, response.data)
+    getRespondAndLog(req, res, lighting_history.join(" "))
 })
 
 loadSettings()
