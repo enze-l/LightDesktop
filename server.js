@@ -1,11 +1,19 @@
 const express = require('express')
+const http = require('http')
 const shell = require("shelljs")
 const bodyParser = require('body-parser')
-const axios = require("axios")
-const fs = require("fs")
+const axios = require('axios')
+const fs = require('fs')
 const ip = require('ip')
+
 const app = express()
 app.use(bodyParser.text({type:"*/*"}))
+const server = http.createServer(app)
+const io = require('socket.io')(server)
+
+io.on('connection', () =>{
+    console.log("hello")
+})
 
 const serverAddress = "http://192.168.2.64:50000"
 const ownAddress = ip.address()
@@ -173,4 +181,4 @@ app.get('/sensor/100', async (req, res) => {
 loadSettings()
 subscribeToSensor()
 getLightingHistory().then()
-app.listen(port, '0.0.0.0', () => console.log(`Listening on port ${port}..`))
+server.listen(port, '0.0.0.0', () => console.log(`Listening on port ${port}..`))
