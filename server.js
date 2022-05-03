@@ -113,6 +113,7 @@ app.post('/display/brightness',(req, res) => {
     if(!settings.auto) {
         setBrightness(req.body)
     }
+    settings.manual_brightness = req.body
     postRespondAndLog(req, res)
 })
 app.get('/display/brightness', (req, res) => {
@@ -167,7 +168,13 @@ app.get('/display/threshold/max', (req, res) => {
 //display auto value
 app.post('/display/auto', (req, res) => {
     settings.auto = req.body
+    if(!settings.auto){
+        setBrightness(settings.manual_brightness)
+    }
     postRespondAndLog(req, res)
+})
+app.get('/display/auto', (req, res)=>{
+    getRespondAndLog(req, res, settings.auto)
 })
 
 //sensor
