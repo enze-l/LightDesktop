@@ -12,7 +12,7 @@ app.use(bodyParser.text({type: "*/*"}))
 const server = http.createServer(app)
 const io = socketIo(server)
 
-const serverAddress = "http://192.168.2.64:50000"
+const serverAddress = () => "http://"+ settings.sensor_ip + ":50000"
 const ownAddress = ip.address()
 const port = 8081
 
@@ -25,6 +25,7 @@ let settings =
         avgArrayLength: 50,
         auto: false,
         manual_brightness: 1,
+        sensor_ip: "192.168.2.64"
     }
 let display_brightness = 1
 let lighting_history = []
@@ -39,7 +40,6 @@ io.on("connection", (socket) => {
 function loadSettings() {
     let rawData = fs.readFileSync('./savestate.json')
     settings = JSON.parse(rawData)
-    console.log(settings)
 }
 
 function saveSettings() {
@@ -48,7 +48,7 @@ function saveSettings() {
 }
 
 function subscribeToSensor() {
-    axios.post(serverAddress + '/subscriber/' + ownAddress + ":" + port).then()
+    axios.post(serverAddress() + '/subscriber/' + ownAddress + ":" + port).then()
 }
 
 function setBrightness(brightness) {
@@ -88,7 +88,7 @@ function setAutoBrightness() {
 }
 
 async function getLightingHistory() {
-    const response = await axios.get(serverAddress + "/list/100")
+    const response = await axios.get(serverAddress() + "/list/100")
     lighting_history = response.data.split(/(\s+)/).filter(e => e.trim().length > 0).map(function (item) {
         return parseInt(item, 10);
     });
@@ -179,7 +179,7 @@ app.get('/display/auto', (req, res)=>{
 
 //sensor
 app.get('/sensor', async (req, res) => {
-    const response = await axios.get(serverAddress + "/reading")
+    const response = await axios.get(serverAddress() + "/reading")
     getRespondAndLog(req, res, response.data)
 })
 
@@ -196,15 +196,22 @@ app.post('/sensor', async (req, res) => {
     io.emit("reading", number)
 })
 app.get('/sensor/max', async (req, res) => {
-    const response = await axios.get(serverAddress + "/reading/max")
+    const response = await axios.get(serverAddress() + "/reading/max")
     getRespondAndLog(req, res, response.data)
 })
 app.get('/sensor/day', async (req, res) => {
-    const response = await axios.get(serverAddress + "/list/day")
+    const response = await axios.get(serverAddress() + "/list/day")
     getRespondAndLog(req, res, response.data)
 })
 app.get('/sensor/100', async (req, res) => {
     getRespondAndLog(req, res, lighting_history.join(" "))
+})
+app.post('/sensor/ip', (req, res) =>{
+    settings.sensor_ip = req.body;
+    postRespondAndLog(req, res)
+})
+app.get('/sensor/ip', (req, res)=>{
+    getRespondAndLog(req, res, settings.sensor_ip)
 })
 
 loadSettings()
