@@ -8,7 +8,7 @@ const ip = require('ip')
 const socketIo = require('socket.io')
 
 const app = express()
-app.use(bodyParser.text({type:"*/*"}))
+app.use(bodyParser.text({type: "*/*"}))
 const server = http.createServer(app)
 const io = socketIo(server)
 
@@ -17,39 +17,41 @@ const ownAddress = ip.address()
 const port = 8081
 
 let settings =
-{
-    display_min: .5,
-    display_max: 1,
-    display_threshold_min: 50,
-    display_threshold_max: 300,
-    avgArrayLength: 50
-}
+    {
+        display_min: .5,
+        display_max: 1,
+        display_threshold_min: 50,
+        display_threshold_max: 300,
+        avgArrayLength: 50,
+        auto: false,
+        manual_brightness: 1,
+    }
 let display_brightness = 1
 let lighting_history = []
 
-io.on("connection", (socket) =>{
+io.on("connection", (socket) => {
     console.log("client connected")
-    socket.on("disconnect", () =>{
+    socket.on("disconnect", () => {
         console.log("client disconnected")
     })
 })
 
-function loadSettings(){
+function loadSettings() {
     let rawData = fs.readFileSync('./savestate.json')
     settings = JSON.parse(rawData)
     console.log(settings)
 }
 
-function saveSettings(){
+function saveSettings() {
     let data = JSON.stringify(settings, null, 2)
     fs.writeFileSync('./savestate.json', data)
 }
 
-function subscribeToSensor(){
+function subscribeToSensor() {
     axios.post(serverAddress + '/subscriber/' + ownAddress + ":" + port).then()
 }
 
-function setBrightness(brightness){
+function setBrightness(brightness) {
     if (display_brightness !== brightness) {
         display_brightness = brightness
         const displayInfoArray = String(
@@ -60,19 +62,18 @@ function setBrightness(brightness){
     }
 }
 
-function setAutoBrightness(){
-    const average = arr => arr.reduce((a,b) => a + b, 0) / arr.length
+function setAutoBrightness() {
+    const average = arr => arr.reduce((a, b) => a + b, 0) / arr.length
     let lighting_history_clone = [...lighting_history]
-    if(lighting_history_clone.length<100){
-        const frontFiller = Array(100-lighting_history_clone.length).fill(lighting_history_clone[0])
+    if (lighting_history_clone.length < 100) {
+        const frontFiller = Array(100 - lighting_history_clone.length).fill(lighting_history_clone[0])
         lighting_history_clone = frontFiller.concat(lighting_history_clone)
     }
-    const lightAverage = average(lighting_history_clone.splice(100-settings.avgArrayLength)).toFixed(0)
-    if(lightAverage < settings.display_threshold_min){
+    const lightAverage = average(lighting_history_clone.splice(100 - settings.avgArrayLength)).toFixed(0)
+    if (lightAverage < settings.display_threshold_min) {
         setBrightness(settings.display_min)
         console.log("Low Value")
-    }
-    else if(lightAverage > settings.display_threshold_max){
+    } else if (lightAverage > settings.display_threshold_max) {
         setBrightness(settings.display_max)
         console.log("Hig Value")
     } else {
@@ -80,27 +81,27 @@ function setAutoBrightness(){
         const displayThresholdRange = settings.display_threshold_max - settings.display_threshold_min
         const rangeAdjustedAverage = lightAverage - settings.display_threshold_min;
 
-        const brightness = settings.display_min + ( rangeAdjustedAverage / displayThresholdRange ) * displayRange
+        const brightness = settings.display_min + (rangeAdjustedAverage / displayThresholdRange) * displayRange
         setBrightness(brightness)
         console.log("Regulating")
     }
 }
 
-async function getLightingHistory(){
+async function getLightingHistory() {
     const response = await axios.get(serverAddress + "/list/100")
-    lighting_history = response.data.split(/(\s+)/).filter(e => e.trim().length > 0).map(function(item) {
+    lighting_history = response.data.split(/(\s+)/).filter(e => e.trim().length > 0).map(function (item) {
         return parseInt(item, 10);
     });
     return response
 }
 
-function getRespondAndLog(req, res, body){
+function getRespondAndLog(req, res, body) {
     res.send(String(body))
     saveSettings()
     console.log("get " + req.path + " value: " + body)
 }
 
-function postRespondAndLog(req, res){
+function postRespondAndLog(req, res) {
     res.sendStatus(204)
     saveSettings()
     console.log("post " + req.path + " value: " + req.body)
@@ -108,19 +109,21 @@ function postRespondAndLog(req, res){
 
 //display
 //display brightness
-app.post('/display/brightness',(req, res) =>{
-    setBrightness(req.body)
+app.post('/display/brightness',(req, res) => {
+    if(!settings.auto) {
+        setBrightness(req.body)
+    }
     postRespondAndLog(req, res)
 })
-app.get('/display/brightness',(req, res) =>{
+app.get('/display/brightness', (req, res) => {
     getRespondAndLog(req, res, display_brightness)
 })
 //display min
-app.post('/display/min',(req, res) =>{
+app.post('/display/min', (req, res) => {
     settings.display_min = parseFloat(req.body)
     postRespondAndLog(req, res)
 })
-app.get('/display/min',(req, res) =>{
+app.get('/display/min', (req, res) => {
     getRespondAndLog(req, res, settings.display_min)
 })
 //display max
@@ -128,7 +131,7 @@ app.post('/display/max', (req, res) => {
     settings.display_max = parseFloat(req.body)
     postRespondAndLog(req, res)
 })
-app.get('/display/max',(req, res) =>{
+app.get('/display/max', (req, res) => {
     getRespondAndLog(req, res, settings.display_max)
 })
 //display max
@@ -136,11 +139,11 @@ app.post('/display/intervalLength', (req, res) => {
     settings.avgArrayLength = parseFloat(req.body)
     postRespondAndLog(req, res)
 })
-app.get('/display/intervalLength',(req, res) =>{
+app.get('/display/intervalLength', (req, res) => {
     getRespondAndLog(req, res, settings.avgArrayLength)
 })
 //display threshold min
-app.post('/display/threshold/min',(req, res) =>{
+app.post('/display/threshold/min', (req, res) => {
     const value = parseInt(req.body)
     if (value) {
         settings.display_threshold_min = value
@@ -149,7 +152,7 @@ app.post('/display/threshold/min',(req, res) =>{
     }
     postRespondAndLog(req, res)
 })
-app.get('/display/threshold/min',(req, res) =>{
+app.get('/display/threshold/min', (req, res) => {
     getRespondAndLog(req, res, settings.display_threshold_min)
 })
 
@@ -158,24 +161,31 @@ app.post('/display/threshold/max', (req, res) => {
     settings.display_threshold_max = parseInt(req.body)
     postRespondAndLog(req, res)
 })
-app.get('/display/threshold/max',(req, res) =>{
+app.get('/display/threshold/max', (req, res) => {
     getRespondAndLog(req, res, settings.display_threshold_max)
+})
+//display auto value
+app.post('/display/auto', (req, res) => {
+    settings.auto = req.body
+    postRespondAndLog(req, res)
 })
 
 //sensor
-app.get('/sensor', async (req, res) =>{
+app.get('/sensor', async (req, res) => {
     const response = await axios.get(serverAddress + "/reading")
     getRespondAndLog(req, res, response.data)
 })
 
-app.post('/sensor', async (req, res)=>{
-    const number = parseInt(req.body.replace( /^\D+/g, ''))
+app.post('/sensor', async (req, res) => {
+    const number = parseInt(req.body.replace(/^\D+/g, ''))
     lighting_history.push(number)
-    while(lighting_history.length > 100) {
+    while (lighting_history.length > 100) {
         lighting_history.shift()
     }
     postRespondAndLog(req, res)
-    setAutoBrightness()
+    if (settings.auto) {
+        setAutoBrightness()
+    }
     io.emit("reading", number)
 })
 app.get('/sensor/max', async (req, res) => {
