@@ -6,15 +6,32 @@ const axios = require('axios')
 const fs = require('fs')
 const ip = require('ip')
 const socketIo = require('socket.io')
+const wait = require('wait')
+const CronJob = require('cron').CronJob
 
 const app = express()
 app.use(bodyParser.text({type: "*/*"}))
 const server = http.createServer(app)
 const io = socketIo(server)
 
-const serverAddress = () => "http://"+ settings.sensor_ip + ":50000"
+const serverAddress = () => "http://" + settings.sensor_ip + ":50000"
 const ownAddress = ip.address()
 const port = 8081
+
+let connecting = false
+let lastConnectionTime = 0
+
+const job = new CronJob(
+    '* * * * * *',
+    async function () {
+        if (!connecting && lastConnectionTime + 3000 < new Date().getTime()) {
+            connecting = true
+            console.log("connecting")
+            await subscribeToSensor().then()
+            connecting = false
+        }
+    }
+)
 
 let settings =
     {
@@ -47,8 +64,18 @@ function saveSettings() {
     fs.writeFileSync('./savestate.json', data)
 }
 
-function subscribeToSensor() {
-    axios.post(serverAddress() + '/subscriber/' + ownAddress + ":" + port).then()
+async function subscribeToSensor() {
+    let connected = false
+    while (!connected) {
+        try {
+            await axios.post(serverAddress() + '/subscriber/' + ownAddress + ":" + port)
+            connected = true
+        } catch (e){
+            console.log(e)
+            await wait(1000)
+        }
+    }
+    getLightingHistory().then()
 }
 
 function setBrightness(brightness) {
@@ -109,8 +136,8 @@ function postRespondAndLog(req, res) {
 
 //display
 //display brightness
-app.post('/display/brightness',(req, res) => {
-    if(!settings.auto) {
+app.post('/display/brightness', (req, res) => {
+    if (!settings.auto) {
         setBrightness(req.body)
     }
     settings.manual_brightness = req.body
@@ -168,12 +195,12 @@ app.get('/display/threshold/max', (req, res) => {
 //display auto value
 app.post('/display/auto', (req, res) => {
     settings.auto = req.body
-    if(!settings.auto){
+    if (!settings.auto) {
         setBrightness(settings.manual_brightness)
     }
     postRespondAndLog(req, res)
 })
-app.get('/display/auto', (req, res)=>{
+app.get('/display/auto', (req, res) => {
     getRespondAndLog(req, res, settings.auto)
 })
 
@@ -193,6 +220,7 @@ app.post('/sensor', async (req, res) => {
     if (settings.auto) {
         setAutoBrightness()
     }
+    lastConnectionTime = new Date().getTime()
     io.emit("reading", number)
 })
 app.get('/sensor/max', async (req, res) => {
@@ -206,15 +234,14 @@ app.get('/sensor/day', async (req, res) => {
 app.get('/sensor/100', async (req, res) => {
     getRespondAndLog(req, res, lighting_history.join(" "))
 })
-app.post('/sensor/ip', (req, res) =>{
+app.post('/sensor/ip', (req, res) => {
     settings.sensor_ip = req.body;
     postRespondAndLog(req, res)
 })
-app.get('/sensor/ip', (req, res)=>{
+app.get('/sensor/ip', (req, res) => {
     getRespondAndLog(req, res, settings.sensor_ip)
 })
 
 loadSettings()
-subscribeToSensor()
-getLightingHistory().then()
+job.start()
 server.listen(port, '0.0.0.0', () => console.log(`Listening on port ${port}..`))
