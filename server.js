@@ -1,12 +1,13 @@
 const express = require('express')
 const http = require('http')
-const shell = require("shelljs")
+const shell = require('shelljs')
 const bodyParser = require('body-parser')
 const axios = require('axios')
 const fs = require('fs')
 const ip = require('ip')
 const socketIo = require('socket.io')
 const wait = require('wait')
+const path = require('path');
 const CronJob = require('cron').CronJob
 
 const app = express()
@@ -243,6 +244,12 @@ app.get('/sensor/day', async (req, res) => {
 app.get('/sensor/100', async (req, res) => {
     getRespondAndLog(req, res, lighting_history.join(" "))
 })
+
+app.use(express.static(path.join(__dirname, 'build')));
+
+app.get('/*', function (req, res) {
+    res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
 
 loadSettings()
 job.start()
