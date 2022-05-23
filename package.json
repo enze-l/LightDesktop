@@ -22,7 +22,7 @@
     "wait": "^0.4.2"
   },
   "scripts": {
-    "start": "node server.js",
+    "start": "npm run build && node server.js",
     "build": "react-scripts build"
   },
   "eslintConfig": {
