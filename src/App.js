@@ -10,8 +10,9 @@ import {grey, blue} from "@mui/material/colors";
 const serverAddress = "http://localhost:8081"
 const textColor = "#6B7280"
 const graphColor = "#ffffff"
-const maxValueColor = "#ffdd00"
-const currentValueColor = "#6faeff"
+const maxColor = "#ffdd00"
+const dayColor = "#22ff00"
+const currentColor = "#6faeff"
 const sensor = new Sensor(serverAddress)
 const display = new Display(serverAddress)
 const theme = createTheme({
@@ -26,7 +27,8 @@ const theme = createTheme({
 })
 
 function App() {
-    const [hundredValues, setGraphData] = useState([])
+    const [graphData, setGraphData] = useState([])
+    const [dayData, setDayData] = useState([])
     const [displayBrightnessRange, setDisplayBrightnessRange] = useState([10, 100])
     const [displayThresholdRange, setDisplayThresholdRange] = useState([1, 500])
     const [displayBrightness, setDisplayBrightness] = useState(100)
@@ -35,7 +37,7 @@ function App() {
     const [graphScaleY, setGraphScaleY] = useState(50)
     const [autoSwitch, setAutoSwitch] = useState(false)
     const lastHundredValues = useRef([]);
-    const sensorLevel = useRef();
+    const dayValues = useRef([]);
 
     useEffect(() => {
         Promise.all([
@@ -49,10 +51,10 @@ function App() {
             display.getBrightness(),
             display.getIntervalLength(),
             display.getAuto(),
+            sensor.getDayValues()
         ]).then((results) => {
             lastHundredValues.current = String(results[0].data).split(/(\s+)/).filter(e => e.trim().length > 0)
             const maxBrightness = results[1].data
-            sensorLevel.current = results[2].data
             setDisplayThresholdRange([results[4].data, results[3].data])
             setDisplayBrightnessRange([results[6].data * 100, results[5].data * 100])
             setDisplayBrightness(results[7].data * 100)
@@ -60,7 +62,8 @@ function App() {
             setAutoSwitch(results[9].data)
             setMaxSensorBrightness(maxBrightness)
             reactToYAxisChange(maxBrightness, results[3].data)
-            setGraphData(convertArrayToObjects(lastHundredValues.current, maxBrightness, sensorLevel.current))
+            dayValues.current = String(results[10].data).split(/(\s+)/).filter(e => e.trim().length > 0)
+            setGraphData(convertArrayToObjects(lastHundredValues.current, dayValues.current, maxBrightness, results[2].data))
         })
     }, [])
 
@@ -74,10 +77,17 @@ function App() {
             lastHundredValues.current = currentHundredValues
             if (currentLevel > maxSensorBrightness) {
                 setMaxSensorBrightness(msg)
-                setGraphData(convertArrayToObjects(lastHundredValues.current, currentLevel.toString(), currentLevel.toString()))
-
+                setGraphData(
+                    convertArrayToObjects(
+                        lastHundredValues.current, dayValues.current, currentLevel.toString(), currentLevel.toString()
+                    )
+                )
             } else {
-                setGraphData(convertArrayToObjects(lastHundredValues.current, maxSensorBrightness, currentLevel.toString()))
+                setGraphData(
+                    convertArrayToObjects(
+                        lastHundredValues.current, dayValues.current, maxSensorBrightness, currentLevel.toString()
+                    )
+                )
             }
         })
         return () => {
@@ -89,10 +99,26 @@ function App() {
         setGraphScaleY(Math.round(Math.max(value1, value2) * 1.15))
     }
 
-    function convertArrayToObjects(array, max, current) {
+    function convertArrayToObjects(hundreds, days, max, current) {
         let objectArray = []
-        array.forEach(
-            element => objectArray.push({brightness: element.day + 1, day: element, current: current, max: max})
+        let oldValue = "0"
+        hundreds.forEach(
+            (element, index) => {
+                let day = oldValue
+                if (index % 4 === 0) {
+                    const value = days[index / 4]
+                    if (value) {
+                        day = value
+                        oldValue = value
+                    }
+                }
+                objectArray.push({
+                    day: day,
+                    hundred: element,
+                    current: current,
+                    max: max
+                })
+            }
         )
         return objectArray
     }
@@ -106,7 +132,6 @@ function App() {
             setAutoSwitch(false)
             display.setAuto(false)
         }
-
     }
 
     return (
@@ -115,20 +140,18 @@ function App() {
                 <header className="App-header min-h-screen bg-gray-800">
                     <div className="grid place-items-center">
                         <div className="flex flex-row">
-                            <ComposedChart width={500} height={300} data={hundredValues}>
+                            <ComposedChart width={500} height={300} data={graphData}>
                                 <defs>
                                     <linearGradient id="brightness" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor={graphColor} stopOpacity={0.8}/>
                                         <stop offset="95%" stopColor={graphColor} stopOpacity={0}/>
                                     </linearGradient>
                                 </defs>
-                                <YAxis domain={[0, graphScaleY]} stroke={textColor}>
-                                </YAxis>
-                                <XAxis dataKey="brightness" stroke={textColor}/>
-                                <Area dot={false} isAnimationActive={false} type="monotone" dataKey="day"
+                                <Area dot={false} isAnimationActive={false} type="monotone" dataKey="hundred"
                                       stroke={textColor} fill="url(#brightness)"/>
-                                <Line dot={false} type="monotone" dataKey="max" stroke={maxValueColor}/>
-                                <Line dot={false} type="monotone" dataKey="current" stroke={currentValueColor}/>
+                                <Line dot={false} type="monotone" dataKey="max" stroke={maxColor}/>
+                                <Line dot={false} type="monotone" data={dayData} dataKey="day" stroke={dayColor}/>
+                                <Line dot={false} type="monotone" dataKey="current" stroke={currentColor}/>
                             </ComposedChart>
                             <div className="pl-8 pb-9 pt-2">
                                 <Slider
