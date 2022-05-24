@@ -22,7 +22,7 @@
     "wait": "^0.4.2"
   },
   "scripts": {
-    "start": "npm run build && node server.js",
+    "start": "npm run build && node light-desktop.js 192.168.2.64",
     "build": "react-scripts build"
   },
   "eslintConfig": {

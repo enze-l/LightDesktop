@@ -10,15 +10,17 @@ const wait = require('wait')
 const path = require('path');
 const CronJob = require('cron').CronJob
 
+const args = process.argv
+const sensorIp = args[2]
+
 const app = express()
 app.use(bodyParser.text({type: "*/*"}))
+
 const server = http.createServer(app)
 const io = socketIo(server)
-
-const serverAddress = () => "http://" + settings.sensor_ip + ":50000"
+const serverAddress = () => "http://" + sensorIp + ":50000"
 const ownAddress = ip.address()
 const port = 8081
-
 let connecting = false
 let lastConnectionTime = 0
 
@@ -43,7 +45,6 @@ let settings =
         avgArrayLength: 50,
         auto: false,
         manual_brightness: 1,
-        sensor_ip: "192.168.2.64"
     }
 let display_brightness = 1
 let lighting_history = []
