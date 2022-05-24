@@ -187,7 +187,7 @@ function App() {
                                         display.setMaxBrightness(value[1])
                                     }}
                                 />
-                                <p className="text-gray-500">manuel brightness</p>
+                                <p className="text-gray-500">manual brightness</p>
                                 <Slider
                                     size="small"
                                     track={false}

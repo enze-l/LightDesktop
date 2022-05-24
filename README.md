@@ -47,3 +47,22 @@ control gets switched off so remember to turn it on again.
 ***Toggle Switch***
 The toggle switch on the bottom right toggles between automatic operation (blue) and manuel operation (grey)
 
+Tipp: Modern browsers support saving websites to the desktop where they are displayed as app-icons. Doing so makes
+using the control-panel more seamless.
+
+# Working Principle
+
+The network sensor serves different endpoints from which various parameters, like the last 100 readings, the current
+brightness and the maximal recorded brightness can be retrieved. Furthermore, it can serve its most recent readings via 
+an observer pattern. The exact API can be found under: https://github.com/enze-l/LightServer
+
+This service tabs into this sensor and uses its data to control the brightness of the display. This is done via the
+dependency "xrandr" which can dimm a display via software and works independently of display drivers or graphics drivers.
+An essential part of this process is the npm module "shelljs" which enables a js-script to execute shell commands.
+All settings of the service are saved and retrieved from the file "savestate.json". While it is possible to change the
+settings via this file prior to execution, it is recommended to rather use the web-interface which the service serves
+locally under "localhost:8081".
+
+The interface is upon react and communicates with the service via REST-Endpoint and Websockets. Almost all settings and
+data is retrieved via REST-Endpoint. The only usage for the Websockets is to communicate the realtime data between
+the service and the interface.
