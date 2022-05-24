@@ -9,9 +9,9 @@ import {grey, blue} from "@mui/material/colors";
 
 const serverAddress = "http://localhost:8081"
 const textColor = "#6B7280"
-const graphColor = "#ffffff"
+const graphColor = "#6faeff"
 const maxColor = "#ffdd00"
-const dayColor = "#22ff00"
+const dayColor = "#6B7280"
 const currentColor = "#6faeff"
 const sensor = new Sensor(serverAddress)
 const display = new Display(serverAddress)
@@ -124,7 +124,7 @@ function App() {
             <div className="App">
                 <header className="App-header min-h-screen bg-gray-800">
                     <div className="grid place-items-center">
-                        <div className="flex flex-row">
+                        <div className="flex flex-row mt-8">
                             <ComposedChart width={500} height={300} data={graphData}>
                                 <defs>
                                     <linearGradient id="brightness" x1="0" y1="0" x2="0" y2="1">
@@ -160,8 +160,9 @@ function App() {
                                 />
                             </div>
                         </div>
-                        <div className="flex flex-row pl-3">
+                        <div className="flex flex-row pl-3 pt-4">
                             <Box width={500} className="pl-16">
+                                <p className="text-gray-500">attack delay</p>
                                 <Slider
                                     size="small"
                                     min={1}
@@ -173,6 +174,7 @@ function App() {
                                         display.setIntervalLength(value)
                                     }}
                                 />
+                                <p className="text-gray-500">brightness range</p>
                                 <Slider
                                     size="small"
                                     min={10}
@@ -185,6 +187,7 @@ function App() {
                                         display.setMaxBrightness(value[1])
                                     }}
                                 />
+                                <p className="text-gray-500">manuel brightness</p>
                                 <Slider
                                     size="small"
                                     track={false}
@@ -201,8 +204,8 @@ function App() {
                                     }}
                                 />
                             </Box>
-                            <div className="ml-5 mb-2 grid place-items-center">
-                                <Switch checked={autoSwitch} onChange={changeAutoValue}/>
+                            <div className="ml-5 mb-2 mt-5 grid place-items-center">
+                                <Switch className="-rotate-90" checked={autoSwitch} onChange={changeAutoValue}/>
                             </div>
                         </div>
                     </div>
