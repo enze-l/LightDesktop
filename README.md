@@ -71,6 +71,9 @@ the service and the interface.
 
 # From Concept to Result
 
+## Motivation
+I am sitting in front of a desktop computer at varying times of the day. While my screen is not directly hit by sunshine, I still often times feel the urge to adjust its brightness to not feel blinded by it at night. While my laptop and phone do dimm their screens according to the environment, I was not able to find a comparable package of software and hardware for desktop screens. The lack of options led me to designing this system which should dimm the screen according to my own specification and should be adjustable on the fly.
+
 ## Initial Idea
 The first idea was to have a network connected sensor and to connect to it via a command line interface where you could see reference data in form of ascii-charts and set your configuration parameters.
 
